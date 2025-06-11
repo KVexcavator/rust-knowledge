@@ -1,0 +1,24 @@
+отладка вывода
+println!("Hello, {:?}", name);
+вернет вывод со всеми скрытыми знаками
+Hello, "Vaysa\n"
+* есть ещё {:#?}, for “pretty” printing
+-----------------------
+массивы и итерация
+let visitor_list = ["bert", "steve", "fred"];
+for i in 0..10 {
+    println!("{}", i)
+}
+for i in 0..visitor_list.len() {
+   if visitor_list[i] == your_name { ... }
+}
+перебрать весь
+for visitor in &visitor_list {
+   if visitor == your_name { ... }
+}
+-------------------------
+Массивы не могут менять размер. Векторы (Vec) разработаны для динамического изменения размера.
+-------------------------
+Отладка вывода структуры
+#[derive(Debug)]
+struct Visitor {...
