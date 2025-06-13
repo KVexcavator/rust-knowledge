@@ -1,0 +1,61 @@
+Срезовый тип
+
+Срезы позволяют ссылаться не на всю коллекцию, а на сплошную после­довательность элементов в коллекции.
+=======================
+Строковый срез — это ссылка на часть значения типа String:
+let s = String::from("hello world");
+let hello = &s[0..5];
+let world = &s[6..11];
+-----------------------
+если нужно начать с пер­вого индекса (нуля), то можно отбросить 0
+let s = String::from("hello");
+let slice = &s[0..2];
+let slice = &s[..2];
+-----------------------
+eсли нужно закончить последним
+let s = String::from("hello");
+let len = s.len();
+let slice = &s[3..len];
+let slice = &s[3..];
+-----------------------
+можно отбросить оба, первое и последнее
+let s = String::from("hello");
+let len = s.len();
+let slice = &s[0..len];
+let slice = &s[..];
+------------------------
+например, нам нужно вернуть первое слово из строки
+
+fn first_word(s: &str) -> &str {
+  let bytes = s.as_bytes();
+  for (i, &item) in bytes.iter().enumerate() {
+    if item == b' ' {
+      return &s[0..i];
+    }
+  }
+  &s[..]
+}
+* enumerate возвращает кортеж (индекс, элемент)
+* &str — это неизменяемая ссылка
+
+fn main() {
+  let my_string = String::from("hello world");
+
+  // first_word работает на срезах экземпляров типа String
+  let word = first_word(&my_string[..]);
+
+  let my_string_literal = "hello world";
+
+  // first_word работает на срезах строковых литералов
+  let word = first_word(&my_string_literal[..]);
+
+  // Так как строковые литералы уже являются строковыми срезами,
+  // это также работает без срезового синтаксиса!
+  let word = first_word(my_string_literal);
+}
+
+=============================
+Другие срезы
+
+let a = [1, 2, 3, 4, 5];
+let slice = &a[1..3];
