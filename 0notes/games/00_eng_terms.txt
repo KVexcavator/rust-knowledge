@@ -1,0 +1,8 @@
+flappy - хлопающий
+obstacles - препятствия
+scorekeeping - подсчет очков
+momentum - импульс
+underwear - нижнее бельё
+score - счёт, количество очков, забить(гол)
+dungeon - подземелье
+crawl - ползти
