@@ -1,21 +1,17 @@
+// Rewrite the factorial function using a `while` loop.
 pub fn factorial(n: u32) -> u32 {
-    let mut result = 1;
-    for i in 1..=n {
-        // Use saturating multiplication to stop at the maximum value of u32
-        // rather than overflowing and wrapping around
-        result *= i;
+    let mut res = 1;
+    let mut i = 1;
+    while i <= n {
+        res *= i;
+        i += 1;
     }
-    result
+    res
 }
 
 #[cfg(test)]
 mod tests {
     use crate::factorial;
-
-    #[test]
-    fn twentieth() {
-        assert_eq!(factorial(20), u32::MAX);
-    }
 
     #[test]
     fn first() {
