@@ -1,0 +1,7 @@
+[package]
+name = "rectangles"
+version = "0.1.0"
+authors = ["KVexcavator"]
+edition = "2024"
+
+[dependencies]
