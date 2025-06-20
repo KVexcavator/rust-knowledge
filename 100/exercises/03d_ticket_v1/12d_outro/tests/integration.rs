@@ -6,44 +6,44 @@ use outro_02::Order;
 
 #[test]
 fn test_order() {
-    let mut order = Order::new("Rusty Book".to_string(), 3, 2999);
+    let mut order = Order::new("Rusty Book".to_string(), 3, 2999.0);
 
     assert_eq!(order.product_name(), "Rusty Book");
     assert_eq!(order.quantity(), &3);
-    assert_eq!(order.unit_price(), &2999);
-    assert_eq!(order.total(), 8997);
+    assert_eq!(order.unit_price(), &2999.0);
+    assert_eq!(order.total(), 8997.0);
 
     order.set_product_name("Rust Book".to_string());
     order.set_quantity(2);
-    order.set_unit_price(3999);
+    order.set_unit_price(3999.0);
 
     assert_eq!(order.product_name(), "Rust Book");
     assert_eq!(order.quantity(), &2);
-    assert_eq!(order.unit_price(), &3999);
-    assert_eq!(order.total(), 7998);
+    assert_eq!(order.unit_price(), &3999.0);
+    assert_eq!(order.total(), 7998.0);
 }
 
 // Validation tests
 #[test]
 #[should_panic]
 fn test_empty_product_name() {
-    Order::new("".to_string(), 3, 2999);
+    Order::new("".to_string(), 3, 2999.0);
 }
 
 #[test]
 #[should_panic]
 fn test_long_product_name() {
-    Order::new("a".repeat(301), 3, 2999);
+    Order::new("a".repeat(301), 3, 2999.0);
 }
 
 #[test]
 #[should_panic]
 fn test_zero_quantity() {
-    Order::new("Rust Book".to_string(), 0, 2999);
+    Order::new("Rust Book".to_string(), 0, 2999.0);
 }
 
 #[test]
 #[should_panic]
 fn test_zero_unit_price() {
-    Order::new("Rust Book".to_string(), 3, 0);
+    Order::new("Rust Book".to_string(), 3, 0.0);
 }
