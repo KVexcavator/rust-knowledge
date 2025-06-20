@@ -53,6 +53,9 @@ cargo build --release
 cargo build
 обновить упаковку
 cargo update
+---------------------------------
+создать новую упаковку
+cargo new --lib restaurant
 -----------------------------------
 подсказки по коду
 cargo clippy
