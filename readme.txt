@@ -54,6 +54,13 @@ cargo build --release
 cargo build
 обновить упаковку
 cargo update
+--------------------------------
+поменьше информации
+cargo run --quiet
+cargo test -q
+--------------------------------
+тесты по порядку
+cargo test -- --test-threads=1.
 ---------------------------------
 создать новую упаковку
 cargo new --lib restaurant
