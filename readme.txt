@@ -17,7 +17,8 @@ fn main() {
 }
 ```
 компиляция
-rustc main.rs
+rustc hello_world.rs
+chmod +x hello_world.rs
 выполнение
 ./hello_world
 ---------------------------
