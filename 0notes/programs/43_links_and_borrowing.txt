@@ -58,7 +58,7 @@ fn change(some_string: &mut String) {
 }
 * Rust предотвращает гонку данных во время компиляции
 
-Пример кравильного подхода:
+Пример правильного подхода:
   let mut s = String::from("hello");
   {
     let r1 = &mut s;
