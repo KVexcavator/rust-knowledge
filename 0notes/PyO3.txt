@@ -1,0 +1,73 @@
+PyO3 — это библиотека (crate) для интеграции Python и Rust
+С её помощью можно писать модули на Rust, которые потом подключаются в Python как обычные модули, через import
+---
+PyO3 позволяет:
+- вызывать функции Rust из Python (import my_rust_module)
+- создавать классы и объекты на Rust, использовать их в Python
+- наоборот — вызывать Python-функции из Rust
+Под капотом используется Python C API, но PyO3 прячет всю сложность и делает интерфейс удобным и безопасным
+---
+Минимальный пример: hello("Вася")
+1. Создаём новый проект
+```bash
+cargo new --lib hello_pyo3
+cd hello_pyo3
+```
+2. Правим Cargo.toml:
+```toml
+[package]
+name = "hello_pyo3"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "hello_pyo3"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.22", features = ["extension-module"] }
+```
+* crate-type = ["cdylib"] — нужно, чтобы собрать динамическую библиотеку, которую Python сможет импортировать
+3. Пишем код src/lib.rs
+```rust
+use pyo3::prelude::*;
+
+/// Простейшая функция hello(name)
+#[pyfunction]
+fn hello(name: String) -> PyResult<String> {
+    Ok(format!("Привет, {}!", name))
+}
+
+/// Определяем Python-модуль
+#[pymodule]
+fn hello_pyo3(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(hello, m)?)?;
+    Ok(())
+}
+```
+4. Собираем Python-модуль
+PyO3 дружит с инструментом maturin — он упрощает сборку и установку Python-модулей:
+```bash
+pip install maturin
+```
+Соберём модуль:
+```bash
+maturin develop
+```
+* После этого в текущей Python-среде появится модуль hello_pyo3
+
+5. Проверяем в Python:
+
+```python
+import hello_pyo3
+print(hello_pyo3.hello("Вася"))
+```
+Результат:
+```
+Привет, Вася!
+```
+---
+Как это работает под капотом
+- Rust компилирует код в .so (на Linux)/.pyd(на Windows)/.dylib(на macOS).
+- Этот файл содержит функции, доступные через Python API
+- maturin develop копирует и регистрирует его так, что import hello_pyo3 работает, как будто это обычный .py файл

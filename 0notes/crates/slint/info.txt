@@ -1,0 +1,89 @@
+https://docs.rs/slint/latest/slint/
+https://docs.slint.dev/latest/docs/slint/
+---
+Slint** (фреймворк для GUI на Rust) работает под Ubuntu
+Можно разрабатывать, собирать и запускать приложения с интерфейсом прямо в Linux, включая Ubuntu 22.04, 24.04 и даже под WSL (если настроен доступ к X11 или Wayland).
+---
+Slint — это современный, лёгкий и кроссплатформенный UI-фреймворк для Rust, C++, JavaScript, и др.
+Он не требует Qt, GTK или других тяжёлых зависимостей — всё рендерится через Skia или OpenGL/Vulkan
+---
+Установка на Ubuntu
+```bash
+sudo apt update
+sudo apt install build-essential libgl1-mesa-dev libx11-dev libxcb1-dev libxkbcommon-dev libwayland-dev pkg-config
+```
+---
+* В VS Code можно поставить плагин [Slint for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=Slint.slint-vscode) — он даёт подсветку синтаксиса, предпросмотр интерфейса и автодополнение
+---
+Поддержка Wayland и X11
+Slint автоматически подстраивается под окружение:
+* Если Ubuntu работает под Wayland — он использует его напрямую
+* Если под X11 — всё также работает без проблем
+
+======
+Минимальный пример проекта - окошко с надписью "Привет, Ubuntu!"
+---
+Структура проекта
+```
+slint-demo/
+├── Cargo.toml
+├── src/
+│   └── main.rs
+└── ui/
+    └── main.slint
+```
+```Cargo.toml
+[package]
+name = "slint-demo"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Основная библиотека Slint
+slint = "1.5"
+```
+```src/main.rs
+// Импортируем Slint макрос для подключения .slint файлов
+slint::include_modules!();
+
+fn main() {
+    // Создаём окно из описанного в main.slint компонента
+    let app = AppWindow::new().unwrap();
+
+    // Запускаем цикл обработки событий
+    app.run().unwrap();
+}
+```
+```ui/main.slint
+// Объявляем главный компонент приложения
+export component AppWindow inherits Window {
+    width: 400px;
+    height: 300px;
+    title: "Slint Demo on Ubuntu";
+
+    Rectangle {
+        background: #202020;
+        Text {
+            text: "Привет, Ubuntu!";
+            color: white;
+            font-size: 22px;
+            vertical-alignment: center;
+            horizontal-alignment: center;
+        }
+    }
+}
+```
+Запуск
+```bash
+cargo run
+```
+* Для автоматической пересборки при изменениях .slint или .rs файлов:
+```bash
+cargo install cargo-watch
+cargo watch -x run
+```
+* Если ошибка про libEGL или libGL:
+```bash
+sudo apt install libegl1-mesa-dev libgles2-mesa-dev
+```
+
