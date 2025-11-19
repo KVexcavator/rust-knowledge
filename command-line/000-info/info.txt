@@ -1,0 +1,27 @@
+cargo run --quiet
+cargo test
+
+*
+скомпилированная прога hello
+находится в target/debug
+но н езапустится по умолчанию
+надо настроить в Cargo.tomb
+[dev-dependencies]
+assert_cmd = "1"
+
+#[test]
+fn runs_hello(){
+  let mut cmd = Command::new("hello");
+  let res = cmd.output();
+  assert!(res.is_ok());
+}
+далее надо импортировать
+use assert_cmd::Command
+и написать чтото вроде
+*/
+
+#[test]
+fn can_run_hello(){
+  let mut cmd = Command::cargo_bin("hello").unwrap();
+  cmd.assert().success();
+}
