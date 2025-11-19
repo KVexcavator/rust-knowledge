@@ -1,2 +1,4 @@
 https://github.com/PacktPublishing/Rust-for-Blockchain-Application-Development
 ========================
+Foundry — быстрый, портативный и модульный инструментарий для Ethereum, использующий Rust
+В составе Foundry три пакета: Forge, фреймворк для тестирования Ethereum, Cast, инструмент для взаимодействия со смарт-контрактами и данными EVM в цепочке, и Anvil, локальный узел Ethereum, такой же, как Ganache или сеть Hardhat.
