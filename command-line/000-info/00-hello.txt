@@ -1,3 +1,5 @@
+https://github.com/kyclark/command-line-rust
+===
 cargo run --quiet
 cargo test
 
@@ -24,4 +26,14 @@ use assert_cmd::Command
 fn can_run_hello(){
   let mut cmd = Command::cargo_bin("hello").unwrap();
   cmd.assert().success();
+}
+===
+Command::cargo_bin("echor")
+здесь варнинг, потому что старый вариант
+во новому
+use assert_cmd::cargo::cargo_bin_cmd;
+#[test]
+fn test_runs() {
+    let mut cmd = cargo_bin_cmd!("echor");
+    cmd.assert().success();
 }

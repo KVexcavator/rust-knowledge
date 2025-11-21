@@ -40,9 +40,23 @@ cargo doc --open выведет документацию, порождаемую
 построить проект
 cd hello_cargo
 cargo build
-создаст а в target/debug/hello_cargo
+cargo build --release (для продакщена всегда)
+
+создаст а в target/debug/hello
 исполнить
-./target/debug/hello_cargo
+```
+./target/debug/hello
+
+chmod +x target/debug/hello
+./target/debug/hello
+
+export PATH="$PATH:$(pwd)/target/debug"
+hello
+
+скопировать бинарник в /usr/local/bin
+sudo cp target/debug/hello /usr/local/bin/
+hello
+```
 для компиляции кода и последующего выполнения ре­зультирующего исполняемого файла
 cargo run
 cargo run --release // запуск в релиз режиме, без отладки

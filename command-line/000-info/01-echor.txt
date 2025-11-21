@@ -1,0 +1,34 @@
+Программа реализует команду bash echo 
+
+Доступ аргументам 
+--
+В rust std::env::args, проверить можно так
+println!("{:?}", std::env::args());
+cargo run Hello world
+=> Args { inner: ["target/debug/echor", "Hello", "word!"] }
+играем дальше
+cargo run -n helo
+=> unexpected argument '-n' found
+--
+есть раные либы для доступа к аргументам
+здесь будет применятся clap (command-line argument parser)
+```Cargo.toml
+...
+[dependencies]
+clap = "2.33"
+```
+cargo build
+---
+ArgMatches::values_of
+  Return Option<Values>
+
+ArgMatches::values_of_lossy
+  Return Option<Vec<String>>
+---
+в тестах для печати помогающей докуменцации
+use predicates::prelude::*;
+---
+mk-outs.sh
+файл для генерайии вывода
+bash mk_outs.sh
+---
