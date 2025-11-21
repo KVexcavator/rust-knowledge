@@ -25,4 +25,3 @@ impl Rectangle {
 }
 что бы вызвать
 let sq = Rectangle::square(3)
-* похоже на селффункции в руби

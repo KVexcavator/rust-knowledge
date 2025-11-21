@@ -41,7 +41,6 @@ cargo doc --open выведет документацию, порождаемую
 cd hello_cargo
 cargo build
 cargo build --release (для продакщена всегда)
-
 создаст а в target/debug/hello
 исполнить
 ```
