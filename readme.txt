@@ -107,3 +107,21 @@ Git repo
 $ git clone someurl.com/некийпроект
 $ cd некийпроект
 $ cargo build
+==================================
+Rust Справка
+---
+1. rustup doc оффлайн-версия official Rust docs
+```bash
+rustup doc
+BROWSER=google-chrome rustup doc
+BROWSER=firefox rustup doc
+BROWSER=chromium rustup doc
+rustup doc --std hashset
+```
+2. Консольный аналог man - rustc --explain
+показывает объяснения ошибок, а не методов:
+```bash
+rustc --explain E0382
+```
+3. rust-analyzer VSCode - наведи на метод, покажет доку + примеры
+=====================

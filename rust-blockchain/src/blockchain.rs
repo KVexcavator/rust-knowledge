@@ -97,7 +97,6 @@ impl Blockchain {
     }
     
 
-   // ( K -> txid_hex, V -> Vec<TXOutput )
     pub fn find_utxo(&self) -> HashMap<String, Vec<TXOutput>> {
         let mut utxo: HashMap<String, Vec<TXOutput>> = HashMap::new();
         let mut spent_txos: HashMap<String, Vec<usize>> = HashMap::new();
