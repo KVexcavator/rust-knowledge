@@ -1,0 +1,6 @@
+[package]
+name = "double_or_nothing"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
