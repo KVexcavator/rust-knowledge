@@ -1,0 +1,14 @@
+[package]
+name = "first-program"
+author = ["KVexcavator"]
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+[[bin]]
+name = "new-first-program"
+path = "src/main.rs"
+[[bin]]
+name = "new-second-program"
+path = "src/second.rs"

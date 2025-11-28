@@ -1,0 +1,13 @@
+[package]
+name = "my-first-lib"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+[[bin]]
+name = "mymain"
+path = "src/bin/mymain.rs"
+[[bin]]
+name = "mymaintwo"
+path = "anydir/mymaintwo.rs"

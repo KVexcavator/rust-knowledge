@@ -1,0 +1,32 @@
+Oзределение зависимостей в Cargo.toml
+- основной способ из crates.io
+[dependencies]
+chrono = "0.4.0"
+- альтернытивный истояник
+[dependencies]
+cratename = { version = "2.1", registry = "alternate-registry-name" }
+- GIT репозиторий
+[dependencies]
+chrono = { git = "https://github.com/chronotope/chrono" , branch = "master" }
+- локальный путь
+Cargo поддерживает зависимости от путей, что означает, что библиотека может быть под-ячейкой внутри основного пакета Cargo. При сборке основного пакета Cargo под-ячейки, также указанные как зависимости, будут собраны. Однако зависимости, имеющие только зависимость от путей, не могут быть загружены в
+публичный реестр crates.io
+- много путей
+Cargo поддерживает возможность указать как версию реестра, так и расположение Git или пути. Для локальных сборок используется версия Git или пути, а версия реестра будет использоваться при публикации пакета на crates.io
+===
+Использование зависимых пакетов в исходном коде
+---
+use chrono::Utc;
+fn main() {
+  println!("Hello, time now is {:?}", Utc::now());
+}
+---
+fn main() {
+  println!("Hello, time now is {:?}", chrono::Utc::now());
+}
+---
+use chrono as time;
+fn main() {
+  println!("Hello, time now is {:?}", time::Utc::now());
+}
+---
