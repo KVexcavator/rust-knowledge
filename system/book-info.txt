@@ -1,0 +1,3 @@
+загрузить код
+https://github.com/PacktPublishing/Practical-System-Programming-for-Rust-Developers
+https://static.packt-cdn.com/downloads/9781800560963_ColorImages.pdf
