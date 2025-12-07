@@ -1,3 +1,28 @@
 Проект ввода-вывода:
 сборка программы командной строки
 ===
+В проекте будет создана собственная версия grep - globally search a regular expression and print
+---
+cargo new minigrep
+---
+Чтение значений аргументов
+std::env::args
+
+Сборка аргументов командной строки в вектор и их печать
+```
+use std::env;
+fn main() {
+let args: Vec<String> = env::args().collect();
+  println!("{:?}", args);
+}
+```
+* std::env::args будет паниковать, если какой-либо аргумент содержит недействительный Юникод. Если программе нужно принимать аргументы, содержащие недействительный Юникод std::env::args_os
+---
+$ cargo run
+--пропуск--
+["target/debug/minigrep"]
+$ cargo run needle haystack
+--пропуск--
+["target/debug/minigrep", "needle", "haystack"]
+* первым значением в векторе является "target/debug/minigrep", то есть имя двоичного файла
+---
