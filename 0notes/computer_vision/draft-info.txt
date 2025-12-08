@@ -1,0 +1,202 @@
+В экосистеме Rust для **машинного зрения (computer vision)** уже довольно много вариантов. Ниже — подробная, но практичная карта библиотек, от “быстро подключить” до “строить свой пайплайн с нуля”.
+
+---
+
+# 🚀 1. Готовые высокоуровневые библиотеки
+
+## **1) opencv-rust**
+
+Rust-биндинги к полноценному **OpenCV**.
+
+**Зачем использовать:**
+
+* Захват изображений и видео.
+* Детекция лиц.
+* Работа с матрицами, фильтрами, контурами, морфологиями.
+* Поддержка CUDA/OpenCL (если собрал OpenCV с этими флагами).
+
+**Crate:**
+[https://crates.io/crates/opencv](https://crates.io/crates/opencv)
+
+**Мини-пример:**
+
+```rust
+use opencv::prelude::*;
+use opencv::{imgcodecs, imgproc};
+
+fn main() -> opencv::Result<()> {
+    let mut img = imgcodecs::imread("input.png", imgcodecs::IMREAD_COLOR)?;
+    imgproc::cvt_color(&img, &mut img, imgproc::COLOR_BGR2GRAY, 0)?;
+    imgcodecs::imwrite("gray.png", &img, &vec![])?;
+    Ok(())
+}
+```
+
+---
+
+## **2) image / imageproc**
+
+Лёгкие native-библиотеки для простой обработки:
+
+* чтение/запись PNG, JPEG
+* обрезка, фильтры, рисование, наложения
+* бинаризация, контуры, морфологические операции
+
+**Crates:**
+
+* [https://crates.io/crates/image](https://crates.io/crates/image)
+* [https://crates.io/crates/imageproc](https://crates.io/crates/imageproc)
+
+**Нативный Rust**, без C++.
+
+---
+
+## **3) dcv (Dense Computer Vision)**
+
+Rust-реализации некоторых CV-алгоритмов:
+
+* optical flow
+* feature detection (Harris, Shi-Tomasi)
+* matching
+* stereo vision
+
+Немного экспериментально, но работает.
+
+---
+
+# 🔍 2. Низкоуровневые/основные компоненты
+
+## **4) ndarray + ndarray-stats**
+
+Для собственной реализации:
+
+* матриц изображений,
+* convolutions,
+* матричных операций.
+
+Если хочешь свой "мини-OpenCV", это база.
+
+---
+
+## **5) rust-cv (экосистема RustCV)**
+
+Большая коллекция crate'ов в нативном Rust:
+
+* feature detection (FAST, ORB)
+* tracking
+* SLAM-элементы
+* геометрия камеры
+* эпиполярная геометрия
+
+Переходят на модульную структуру:
+[https://github.com/rust-cv](https://github.com/rust-cv)
+
+---
+
+# 🧠 3. Модели машинного зрения (нейросети) в Rust
+
+Если нужно **классификация / детекция / сегментация**, то Rust использует inference-энджины:
+
+---
+
+## **6) candle (от HuggingFace)**
+
+Современный нативный runtime для моделей:
+
+* PyTorch-подобный API
+* GPU через CUDA/Metal
+* Поддержка vision-моделей (ResNet, YOLO, ViT)
+
+---
+
+## **7) ort (ONNX Runtime for Rust)**
+
+Высокая скорость, доступ к моделям:
+
+* YOLOv8/YOLO-N
+* ViT
+* SAM
+* SSD, Faster R-CNN
+
+Пример загрузки модели:
+
+```rust
+use ort::{Environment, SessionBuilder};
+
+fn main() -> anyhow::Result<()> {
+    let env = Environment::builder().build()?;
+    let session = SessionBuilder::new(&env)?.with_model_from_file("yolov8.onnx")?;
+    Ok(())
+}
+```
+
+---
+
+## **8) tch-rs (PyTorch bindings)**
+
+Rust-обёртка над **libtorch**.
+
+Если есть модель в формате `.pt` — это лучший вариант.
+
+---
+
+# 🎥 4. Захват видео и экранов
+
+Чтобы строить что-то вроде OBS:
+
+## **Rust bindings:**
+
+* **gstreamer-rs** — лучший вариант для потоков, фильтров, обработок.
+* **opencv-rust** — тоже может захватывать камеры.
+* **wgpu / wgpu-video** — для рендера + GPU обработки.
+* **scrap** — кроссплатформенный захват экрана.
+
+---
+
+# 🔧 5. GPU-ускорение для Vision
+
+Если нужен **реальный high-performance**, Rust даёт прямой доступ:
+
+* **wgpu** (кроссплатформенная графика + compute shaders)
+* **cuda-sys** / **rustacuda** — CUDA
+* **opencl3** — OpenCL
+* **vulkano** — compute shading
+
+Можно написать свой ускоренный CV-пайтлайн на compute-ядрах.
+
+---
+
+# 🧩 Что выбрать под твои задачи?
+
+Напиши, что именно хочешь:
+
+### **1) сделать CV-процессы (фильтры/обработка/контуры)?**
+
+→ `image`, `imageproc`, `opencv-rust`
+
+### **2) нейросети (YOLO/ViT/segmentation)?**
+
+→ `ort` или `candle`
+
+### **3) построить OBS-подобный инструмент?**
+
+→ `gstreamer-rs` + CV библиотека + GPU ускорение
+
+### **4) свои алгоритмы (SLAM/feature tracking)?**
+
+→ `rust-cv` + `ndarray`
+
+---
+
+Хочешь пример минимального проекта, который:
+
+* захватывает экран,
+* прогоняет через YOLO,
+* и выводит результат в окно?
+===============
+Ещё сслылки:
+https://github.com/rust-cv
+https://arxiv.org/html/2505.12425v1
+https://medium.com/@ekfqlwcjswl/opencv-rust-using-opencv-in-rust-e401e709f41b
+https://rabmcmenemy.medium.com/building-a-vision-detection-algorithm-in-rust-3f8c47799e3a
+https://blog.devgenius.io/jumpstarting-computer-vision-in-rust-a-beginners-guide-98ba8645b5
