@@ -2,10 +2,6 @@
 // Пример, создает план тренировок
 use std::thread;
 use std::time::Duration;
-
-
-
-
 // Функция выводит планы тренировок на основе входных данных и вызывает функцию simulated_expensive_calculation
 // intensity указывает, какая тренировка необходима — низкоин­тенсивная или высокоинтенсивная.
 fn generate_workout(intensity: u32, random_number: u32) {
