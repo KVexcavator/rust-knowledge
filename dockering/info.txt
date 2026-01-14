@@ -1,0 +1,31 @@
+Простейший контейнер, который весит очень много
+```
+FROM rust
+WORKDIR /app
+RUN cargo fetch
+CMD ["cargo", "run"]
+```
+узнать вес - найти в списке (в примере size 79.1MB)
+docker images - найти в списке (в примере size 79.1MB)
+собрать с именем(чтобы не плодить копии)
+docker build -t app
+запустиь в инерактивном режиме(в примере что бы stdin работал)
+docker run -it app
+* app как название имиджа может быть любым
+---
+app как название приложения, может извлекаться из toml, нго опасно это
+можно сделать так 
+ARG BIN_NAME=app
+COPY --from=builder /app/target/release/${BIN_NAME} /app/app
+и потом
+docker build --build-arg BIN_NAME=app .
+--
+но в проде делают так
+Cargo.toml
+[package]
+name = "app"
+Dockerfile
+CMD ["./app"]
+Kubernetes / Compose
+command: ["./app"]
+---
