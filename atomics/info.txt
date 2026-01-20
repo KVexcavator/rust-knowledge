@@ -1,0 +1,24 @@
+Примеры
+https://marabos.nl/atomics/
+https://github.com/m-ou-se/rust-atomics-and-locks
+===
+все необходимое для запуска примеров
+#[allow(unused)]
+use std::{
+  cell::{Cell, RefCell, UnsafeCell},
+  collections::VecDeque,
+  marker::PhantomData,
+  mem::{ManuallyDrop, MaybeUninit},
+  ops::{Deref, DerefMut},
+  ptr::NonNull,
+  rc::Rc,
+  sync::{*, atomic::{*, Ordering::*}},
+  thread::{self, Thread},
+};
+===
+компиляция
+rustc hello_world.rs
+chmod +x hello_world.rs
+выполнение
+./hello_world
+===
