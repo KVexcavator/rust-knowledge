@@ -1,0 +1,275 @@
+Отличный вопрос — **в Rust “остановить поток” = “договориться с ним”**.
+Принудительно убивать поток **специально нельзя**, и это осознанный дизайн.
+
+Разберём **как правильно**, **почему так**, и **какие есть паттерны**.
+
+---
+
+# 1. Главное сразу (очень важно)
+
+> ❌ В Rust **НЕТ** `thread.kill()`
+> ❌ Нельзя безопасно остановить поток извне
+> ✅ Поток **сам должен корректно завершиться**
+
+Почему:
+
+* поток может держать `Mutex`
+* может быть в середине `unsafe`
+* может владеть ресурсами
+
+Принудительный stop = **UB и утечки**.
+
+---
+
+# 2. Самый правильный способ: флаг остановки (atomic)
+
+### Канонический паттерн
+
+```rust
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
+use std::thread;
+use std::time::Duration;
+
+fn main() {
+    let stop = Arc::new(AtomicBool::new(false));
+    let stop_worker = stop.clone();
+
+    let handle = thread::spawn(move || {
+        while !stop_worker.load(Ordering::Acquire) {
+            println!("working...");
+            thread::sleep(Duration::from_millis(200));
+        }
+        println!("clean exit");
+    });
+
+    thread::sleep(Duration::from_secs(1));
+    stop.store(true, Ordering::Release);
+
+    handle.join().unwrap();
+}
+```
+
+### Что тут важно
+
+* `AtomicBool` — сигнал
+* `Acquire / Release` — правильная видимость
+* поток **проверяет флаг сам**
+
+---
+
+# 3. Почему не `Relaxed`
+
+```rust
+stop.load(Ordering::Relaxed) // ❌
+```
+
+Может:
+
+* увидеть `true`
+* но **не увидеть другие изменения**
+
+Acquire/Release — минимум для stop-сигнала.
+
+---
+
+# 4. Более idiomatic Rust: канал (mpsc)
+
+Очень часто **лучше, чем атомик**.
+
+```rust
+use std::sync::mpsc;
+use std::thread;
+
+fn main() {
+    let (tx, rx) = mpsc::channel();
+
+    let handle = thread::spawn(move || {
+        loop {
+            match rx.recv() {
+                Ok(_) => {}
+                Err(_) => {
+                    println!("channel closed, exiting");
+                    break;
+                }
+            }
+        }
+    });
+
+    drop(tx); // сигнал остановки
+    handle.join().unwrap();
+}
+```
+
+### Почему это хорошо
+
+* `drop(sender)` = stop
+* нет гонок
+* легко расширить (команды, сообщения)
+
+---
+
+# 5. Самый “чистый” вариант: scoped threads
+
+Если поток **живет меньше scope**:
+
+```rust
+use std::thread;
+
+thread::scope(|s| {
+    let handle = s.spawn(|| {
+        for i in 0..5 {
+            println!("{i}");
+        }
+    });
+}); // поток гарантированно завершён тут
+```
+
+📌 Часто **вообще не нужен stop-сигнал**.
+
+---
+
+# 6. Через `JoinHandle` — что МОЖНО и что НЕЛЬЗЯ
+
+```rust
+let handle = thread::spawn(|| {
+    loop {}
+});
+```
+
+### Можно
+
+```rust
+handle.join();
+```
+
+### Нельзя
+
+```rust
+handle.stop(); // ❌ не существует
+```
+
+---
+
+# 7. Что делать, если поток “завис” (sleep / blocking I/O)
+
+### ❌ Плохо
+
+```rust
+loop {
+    thread::sleep(Duration::from_secs(60));
+}
+```
+
+Поток не проверяет stop.
+
+---
+
+### ✅ Правильно: таймауты
+
+```rust
+use std::sync::mpsc;
+use std::time::Duration;
+
+loop {
+    match rx.recv_timeout(Duration::from_millis(100)) {
+        Ok(msg) => handle(msg),
+        Err(mpsc::RecvTimeoutError::Timeout) => {
+            if stop.load(Ordering::Acquire) {
+                break;
+            }
+        }
+        Err(_) => break,
+    }
+}
+```
+
+---
+
+# 8. Если у тебя `Mutex`
+
+НЕЛЬЗЯ:
+
+```rust
+// другой поток "убит"
+mutex.lock(); // deadlock навсегда
+```
+
+Поэтому Rust **запрещает принудительный stop**.
+
+---
+
+# 9. Panic — НЕ способ остановки
+
+```rust
+panic!(); // ❌
+```
+
+Почему плохо:
+
+* unwinding может быть выключен
+* `abort` убьёт весь процесс
+* состояние может быть неконсистентным
+
+---
+
+# 10. Async ≠ threads (важно)
+
+Если вдруг ты про async:
+
+```rust
+tokio::task::JoinHandle::abort(); // ✅
+```
+
+Это **другая модель**:
+
+* future
+* кооперативная отмена
+* runtime знает точки остановки
+
+В `std::thread` такого нет.
+
+---
+
+# 11. Таблица: как правильно выбирать
+
+| Ситуация              | Решение                |
+| --------------------- | ---------------------- |
+| Просто остановить     | `AtomicBool`           |
+| Команды / события     | `mpsc`                 |
+| Ограниченный lifetime | `thread::scope`        |
+| Async                 | `abort`                |
+| Shared state          | `Arc<Mutex<T>> + флаг` |
+
+---
+
+# 12. Золотое правило Rust
+
+> **Поток должен иметь точку, где он *соглашается* остановиться**
+
+Rust заставляет тебя:
+
+* проектировать lifecycle
+* а не “выдёргивать вилку из розетки”
+
+---
+
+# 13. Ментальная модель (очень важная)
+
+```text
+C/C++:  kill thread → потом молимся
+Rust:   попросили → дождались → аккуратно вышли
+```
+
+---
+
+# 14. Если хочешь пойти глубже
+Скажи, **в каком контексте ты хочешь останавливать поток**:
+
+* worker
+* сервер
+* пул потоков
+* embedded
+

@@ -20,7 +20,7 @@ let loopback = IpAddr {
   address: String::from("::1")
 };
 
-// таже самая идея но корояе
+// таже самая идея но короче
 
 enum IpAddr {
   V4(String),

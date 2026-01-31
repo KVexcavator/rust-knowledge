@@ -65,9 +65,9 @@ match some_u8_value {
 Пример 1:
 вместо
 let some_u8_value = Some(0u8);
-  match some_u8_value {
-  Some(3) => println!("три"),
-  _ => (),
+match some_u8_value {
+    Some(3) => println!("три"),
+    _ => (),
 }
 лучше
 if let Some(3) = some_u8_value {

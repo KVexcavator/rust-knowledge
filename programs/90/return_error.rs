@@ -22,8 +22,6 @@ fn read_username_from_file() -> Result<String, io::Error> {
 
 // Функция, которая возвращает ошибки в вызывающий код с помощью оператора ?
 // - ? заменяет match
-
-
 fn read_username_from_file() -> Result<String, io::Error> {
   let mut f = File::open("hello.txt")?;
   let mut s = String::new();
@@ -46,7 +44,7 @@ fn read_username_from_file() -> Result<String, io::Error> {
 }
 
 // Оператор ? может использоваться только в функциях, возвращающих Result
-// из main ещже можно
+// из main так же можно
 use std::error::Error;
 use std::fs::File;
 

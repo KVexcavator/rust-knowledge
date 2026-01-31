@@ -8,7 +8,7 @@ mod tests {
     if 2 + 2 == 4 {
       Ok(())
     } else {
-      Err(String::from("два плюс два н еравно четырем"))
+      Err(String::from("два плюс два не равно четырем"))
     }
   }
 }

@@ -1,0 +1,171 @@
+1. Откуда вообще взялись атомики
+Раньше (однопроцессорные времена):
+- один CPU
+- одна инструкция за раз
+- обычная переменная int была безопасной
+Потом пришли:
+- многоядерные CPU**
+- кэши
+- out-of-order execution
+- reordering инструкций
+И мир сломался.
+---
+2. Что реально происходит в железе
+Не один «общий RAM»
+есть:
+```
+Core 1: cache L1 ─┐
+                  ├── RAM
+Core 2: cache L1 ─┘
+```
+Каждое ядро:
+- читает из своего кэша
+- пишет в свой кэш
+- RAM — где-то потом
+---
+Пример гонки без атомиков
+```text
+x = 0
+
+Thread A: x = 1
+Thread B: print(x)
+```
+ожидаешь 1, a реально:
+- A записал 1 в свой cache
+- B читает x из своего cache
+- получает 0
+---
+3. Почему mutex — не всегда выход:
+- системные вызовы
+- блокировки
+- контекстные переключения
+Для счётчиков, флагов, reference counting  слишком дорого
+---
+4. Что такое атомик вообще
+Атомарная операция = операция, которая:
+- неделима
+- видна всем потокам
+- не может быть наполовину
+Пример:
+```text
+x += 1
+```
+На CPU:
+- load
+- add
+- store
+НЕ атомарно.
+
+А атомик:
+```text
+fetch_add
+```
+это одна логическая операция
+---
+5. Атомики — это не Rust-фича. Rust ничего не изобретал.
+Источник:
+- CPU инструкции (LOCK XADD, CAS)
+- C++ memory model (C++11)
+- академическая модель памяти
+Rust принял ту же модель, но строже.
+---
+6. Что такое атомики в Rust
+В Rust это типы из std::sync::atomic:
+```rust
+AtomicBool
+AtomicUsize
+AtomicPtr<T>
+AtomicI32
+```
+Они:
+- лежат в памяти
+- доступны из разных потоков
+- операции — атомарны
+---
+7. Простейший пример
+```rust
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+static COUNTER: AtomicUsize = AtomicUsize::new(0);
+
+COUNTER.fetch_add(1, Ordering::Relaxed);
+```
+Гарантия:
+- increment не потеряется
+- другие потоки увидят результат (с нюансами orderings)
+---
+8. Самое важное: атомик не равносзначен - просто без гонок
+Атомики решают две проблемы:
+1. Atomicity — неделимость
+2. Visibility/Ordering — кто что когда видит
+Большинство багов — во втором
+---
+9. Memory ordering — зачем оно вообще
+CPU и компилятор переупорядочивают инструкции:
+```text
+x = 1;
+y = 1;
+```
+Может стать:
+```text
+y = 1;
+x = 1;
+```
+Если это не запрещено
+---
+10. Пример без ordering
+```rust
+static READY: AtomicBool = AtomicBool::new(false);
+static DATA: AtomicUsize = AtomicUsize::new(0);
+
+// Thread A
+DATA.store(42, Ordering::Relaxed);
+READY.store(true, Ordering::Relaxed);
+
+// Thread B
+if READY.load(Ordering::Relaxed) {
+    println!("{}", DATA.load(Ordering::Relaxed)); // ?
+}
+```
+мы полагаем что вернется 42, но это не гарантировано
+---
+11. Release/Acquire — основа всего
+Правильный вариант
+```rust
+// Thread A
+DATA.store(42, Ordering::Relaxed);
+READY.store(true, Ordering::Release);
+
+// Thread B
+if READY.load(Ordering::Acquire) {
+    println!("{}", DATA.load(Ordering::Relaxed)); // 42
+}
+```
+Release - всё до store  видно другим
+Acquire - всё после load  видит изменения
+Это memory fence
+---
+12. Все ordering в Rust
+
+| Ordering | Что гарантирует        |
+| -------- | ---------------------- |
+| Relaxed  | только атомарность     |
+| Acquire  | запрещает чтения до    |
+| Release  | запрещает записи после |
+| AcqRel   | оба                    |
+| SeqCst   | глобальный порядок     |
+---
+13. SeqCst самый простой
+```rust
+fetch_add(1, Ordering::SeqCst)
+```
+- все атомики видят один порядок
+- медленнее
+- но безопаснее
+---
+13. Очень важная ментальная модель
+Атомик — это не умная переменная»
+Это контракт с компилятором и CPU
+Ты говоришь - ЭТО нельзя переупорядочить
+---
+
