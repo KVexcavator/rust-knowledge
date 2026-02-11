@@ -1,0 +1,218 @@
+Embedded-система = программа, которая:
+- работает без ОС или с лёгкой RTOS
+- управляет железом напрямую
+имеет ограничения:
+- RAM: 4–512 KB
+- Flash: 32 KB – несколько MB
+- нет heap (часто)
+- нет файловой системы
+---
+Типичная архитектура:
+```
+Flash  - программа
+RAM    - данные
+Peripherals:
+  GPIO
+  UART
+  SPI / I2C
+  ADC
+  Timers
+  DMA
+```
+---
+Как работает IoT-устройство, по шагам
+Boot
+1. Подаётся питание
+2. CPU начинает с reset vector
+3. Выполняется код из Flash
+---
+Основной цикл
+```c
+while (1) {
+    read_sensors();
+    process();
+    send_data();
+    sleep();
+}
+```
+или событийная модель:
+- прерывания (interrupts)
+- таймеры
+- DMA
+---
+Связь - IoT часть
+- UART (debug)
+- SPI / I2C (датчики)
+- WiFi / BLE / LoRa
+- MQTT / HTTP
+---
+STM32 — это семейство микроконтроллеров на ARM Cortex-M.
+Популярные ядра:
+
+| Серия | Ядро         |
+| ----- | ------------ |
+| F0/F1 | Cortex-M0/M3 |
+| F4    | Cortex-M4    |
+| H7    | Cortex-M7    |
+| L4    | low-power    |
+
+Особенности:
+- нет MMU
+- bare metal
+- memory-mapped registers
+Пример:
+```
+*(0x40021018) = 0x1; // включить GPIO
+```
+---
+Rust активно используется в embedded
+Основные проекты:
+1. cortex-m: Базовая поддержка ARM Cortex-M
+```
+cortex-m
+cortex-m-rt
+```
+2. stm32-rs: HAL для STM32:
+```
+stm32f4xx-hal
+stm32h7xx-hal
+stm32l4xx-hal
+```
+3 embedded-hal: Стандартный интерфейс для драйверов, пример:
+```rust
+fn read_temp<I2C: embedded_hal::blocking::i2c::WriteRead>(i2c: &mut I2C) {}
+```
+4. Embassy: Async-runtime для микроконтроллеров:
+- async/await
+- таймеры
+- DMA
+- USB
+- networking
+---
+Минимальный Rust embedded проект:
+```rust
+#![no_std]
+#![no_main]
+
+use cortex_m_rt::entry;
+
+#[entry]
+fn main() -> ! {
+    loop {}
+}
+```
+===
+Как тренироваться БЕЗ железа под Linux
+Вариант 1
+QEMU умеет эмулировать Cortex-M
+Установка
+```bash
+sudo apt install qemu-system-arm
+```
+Пример запуска
+
+```bash
+qemu-system-arm \
+  -machine stm32-p103 \
+  -kernel target/thumbv7m-none-eabi/debug/app \
+  -nographic
+```
+Можно:
+- отлаживать
+- подключать gdb
+- смотреть память
+---
+Вариант 2 - probe-rs + emulation
+---
+Вариант 3
+Renode — симулятор целых устройств:
+- STM32
+- networking
+- sensors
+- UART
+- BLE
+Установка:
+```bash
+sudo snap install renode
+```
+Поддерживает Rust
+---
+Самый простой путь обучения Linux
+Шаг 1
+```bash
+rustup target add thumbv7em-none-eabihf
+cargo install cargo-binutils
+cargo install probe-rs-tools
+```
+Шаг 2
+```bash
+cargo new stm32-test
+```
+Cargo.toml
+```toml
+[dependencies]
+cortex-m = "0.7"
+cortex-m-rt = "0.7"
+panic-halt = "0.2"
+```
+Шаг 3
+```bash
+cargo build --target thumbv7em-none-eabihf
+```
+---
+тренироваться БЕЗ эмуляции:
+simulate peripherals в Linux
+пишем драйверы через embedded-hal и делаешь mock:
+```rust
+struct FakeI2C;
+```
+и тестировать обычными unit-тестами
+---
+Лучшие Rust embedded проекты 2025
+- Embassy
+- probe-rs
+- stm32-rs
+- RTIC (real-time framework)
+---
+Реальная архитектура IoT на Rust
+```
+boot
+init clocks
+init peripherals
+spawn tasks
+async loop
+sleep (low power)
+```
+С Embassy:
+```rust
+#[embassy_executor::main]
+async fn main(spawner: Spawner) {
+    loop {
+        Timer::after_secs(1).await;
+    }
+}
+```
+===
+важно понять
+Embedded ≠ Linux:
+| Backend | Embedded      |
+| ------- | ------------- |
+| OS      | нет           |
+| heap    | может не быть |
+| threads | нет           |
+| panic   | crash         |
+| timing  | критично      |
+---
+Rust Embedded Starter Pack
+1. Embassy
+2. probe-rs
+3. Renode (для Linux)
+4. STM32F4 target
+---
+дальше можно:
+- минимальный проект Rust + QEMU
+- Embassy + async на STM32
+- как выглядит memory map STM32
+- как работают interrupts в Rust
+- как писать драйвер SPI/I2C
+- roadmap: от Linux dev → embedded Rust
