@@ -1,0 +1,120 @@
+crate windows это официальный Rust-биндинг к Win32/COM/WinRT
+Он даёт прямой доступ ко всему Windows API, без обёрток и фреймворков
+Разберу:
+
+1. что умеет
+2. как работать с окнами
+3. как найти окно игры
+4. как получить его размер / процесс
+5. что ещё можно делать (захват, ввод и т.д.)
+---
+доступ к:
+- User32 (окна, ввод)
+- GDI (рисование)
+- DWM
+- DirectX
+- Process API
+- Memory API
+- Hooks
+- Screen capture
+- COM / WinRT
+
+Установка:
+```toml
+[dependencies]
+windows = { version = "0.56", features = [
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging"
+] }
+```
+---
+ Базовые типы
+| Тип      | Что это         |
+| -------- | --------------- |
+|  HWND    | дескриптор окна |
+|  RECT    | прямоугольник   |
+|  BOOL    | bool            |
+|  PCWSTR  | wide string     |
+---
+Как найти ВСЕ окна 
+```rust
+use windows::{
+    Win32::UI::WindowsAndMessaging::*,
+    Win32::Foundation::*,
+};
+
+unsafe extern "system" fn enum_proc(hwnd: HWND, _: LPARAM) -> BOOL {
+    let mut buffer = [0u16; 512];
+    let len = GetWindowTextW(hwnd, &mut buffer);
+
+    if len > 0 {
+        let title = String::from_utf16_lossy(&buffer[..len as usize]);
+        println!("HWND {:?} -> {}", hwnd, title);
+    }
+
+    BOOL(1)
+}
+
+fn main() {
+    unsafe {
+        EnumWindows(Some(enum_proc), LPARAM(0));
+    }
+}
+```
+---
+Получить размер окна
+```rust
+use windows::Win32::UI::WindowsAndMessaging::*;
+use windows::Win32::Foundation::*;
+
+unsafe {
+    let mut rect = RECT::default();
+    GetWindowRect(hwnd, &mut rect);
+
+    println!(
+        "x:{} y:{} w:{} h:{}",
+        rect.left,
+        rect.top,
+        rect.right - rect.left,
+        rect.bottom - rect.top
+    );
+}
+```
+Получить процесс игры
+
+```rust
+use windows::Win32::UI::WindowsAndMessaging::GetWindowThreadProcessId;
+
+unsafe {
+    let mut pid = 0;
+    GetWindowThreadProcessId(hwnd, Some(&mut pid));
+    println!("PID: {}", pid);
+}
+```
+Сделать окно активным
+
+```rust
+SetForegroundWindow(hwnd);
+```
+Отправить клавишу в игру
+
+```rust
+use windows::Win32::UI::Input::KeyboardAndMouse::*;
+
+unsafe {
+    keybd_event(VK_SPACE.0 as u8, 0, 0, 0);
+}
+```
+Сделать скриншот окна
+Desktop Duplication API (DXGI)
+---
+Важный момент про игры:
+
+| Режим                | Особенность                     |
+| -------------------- | ------------------------------- |
+| Borderless           | обычное окно                    |
+| Fullscreen exclusive | иногда нет HWND для рендера     |
+| DirectX 12           | только через DXGI               |
+
+Если цель: стриминг, запись, анализ
+нужно Desktop Duplication или DX hook.

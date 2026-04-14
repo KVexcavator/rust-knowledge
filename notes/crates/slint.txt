@@ -1,7 +1,7 @@
 https://docs.rs/slint/latest/slint/
 https://docs.slint.dev/latest/docs/slint/
 ---
-Slint** (фреймворк для GUI на Rust) работает под Ubuntu
+Slint фреймворк для GUI на Rust работает под Ubuntu под Windows
 Можно разрабатывать, собирать и запускать приложения с интерфейсом прямо в Linux, включая Ubuntu 22.04, 24.04 и даже под WSL (если настроен доступ к X11 или Wayland).
 ---
 Slint — это современный, лёгкий и кроссплатформенный UI-фреймворк для Rust, C++, JavaScript, и др.
@@ -13,13 +13,12 @@ sudo apt update
 sudo apt install build-essential libgl1-mesa-dev libx11-dev libxcb1-dev libxkbcommon-dev libwayland-dev pkg-config
 ```
 ---
-* В VS Code можно поставить плагин [Slint for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=Slint.slint-vscode) — он даёт подсветку синтаксиса, предпросмотр интерфейса и автодополнение
+В VS Code можно поставить плагин [Slint for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=Slint.slint-vscode) — он даёт подсветку синтаксиса, предпросмотр интерфейса и автодополнение
 ---
 Поддержка Wayland и X11
 Slint автоматически подстраивается под окружение:
-* Если Ubuntu работает под Wayland — он использует его напрямую
-* Если под X11 — всё также работает без проблем
-
+- Если Ubuntu работает под Wayland  он использует его напрямую
+- Если под X11  всё также работает без проблем
 ======
 Минимальный пример проекта - окошко с надписью "Привет, Ubuntu!"
 ---

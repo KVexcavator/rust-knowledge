@@ -1,0 +1,339 @@
+https://www.linkedin.com/pulse/computed-properties-rust-oleksandr-prokhorenko-3hiof/
+===
+Вычисляемые свойства в Rust
+
+Введение
+Вычисляемые свойства динамически вычисляют значения при обращении к ним, а не хранят их. Хотя такие языки, как Swift и JavaScript, поддерживают их изначально, Rust требует явного указания шаблонов. В этом руководстве рассматриваются пять подходов к воспроизведению вычисляемых свойств в Rust, включая потокобезопасные решения для параллельного кода.
+
+```swift 
+struct Rectangle {
+    var width: Double
+    var height: Double
+
+    var area: Double { // Computed property
+        width * height
+    }
+}
+
+let rect = Rectangle(width: 10, height: 20)
+print(rect.area) // 200
+```
+Rust не поддерживает этот синтаксис, но мы можем добиться аналогичных результатов с помощью методов и стратегий кэширования.
+===
+Использование методов-геттеров (без кэширования)
+Лучше всего подходит для: простых вычислений или часто изменяющихся значений.
+
+В Rust наиболее простой способ эмулировать «вычисляемое свойство» — это написать метод-геттер, который вычисляет значение при каждом вызове.
+```rust
+#[derive(Debug)]
+struct Rectangle {
+    width: f64,
+    height: f64,
+}
+
+impl Rectangle {
+    fn area(&self) -> f64 {
+        self.width * self.height
+    }
+}
+
+fn main() {
+    let rect = Rectangle { width: 10.0, height: 20.0 };
+    println!("Area: {}", rect.area()); // 200.0
+}
+```
+Использование ленивых вычислений с OnceLock (эффективное кэширование)
+Лучше всего подходит для: неизменяемых данных с ресурсоемкими вычислениями.
+
+OnceLock в Rust позволяет лениво вычислять значение один раз. После записи его нельзя сбросить или аннулировать — идеально подходит для данных, которые никогда не меняются.
+```rust
+use std::sync::{Arc, OnceLock};
+use std::thread;
+
+#[derive(Debug)]
+struct Rectangle {
+    width: f64,
+    height: f64,
+    cached_area: OnceLock<f64>,
+}
+
+impl Rectangle {
+    fn new(width: f64, height: f64) -> Self {
+        Self { width, height, cached_area: OnceLock::new() }
+    }
+
+    fn area(&self) -> f64 {
+        *self.cached_area.get_or_init(|| {
+            println!("Computing area...");
+            self.width * self.height
+        })
+    }
+}
+
+fn main() {
+    // Create the Rectangle in a single-threaded context.
+    let mut rect = Rectangle::new(10.0, 20.0);
+
+    // Compute area (first time, triggers computation).
+    println!("First call: {}", rect.area()); // Computes and caches
+    // Use cached value
+    println!("Second call: {}", rect.area()); // Uses cached value
+
+    // Modify width but does NOT invalidate the cache.
+    rect.width = 30.0; // Has no effect on cached area
+
+    // Prove that area() is still the cached value.
+    println!("After modifying width: {}", rect.area()); // Still 200, not 600
+
+    // Move rect into an Arc when we need multi-threading.
+    let rect = Arc::new(rect);
+
+    // Proving Thread-Safety
+    let rect_clone = Arc::clone(&rect);
+    let handle = thread::spawn(move || {
+        println!("Thread call: {}", rect_clone.area());
+    });
+
+    handle.join().unwrap();
+
+    println!("Final call: {}", rect.area());
+}
+```
+вывод:
+Computing area...
+First call: 200
+Second call: 200
+After modifying width: 200
+Thread call: 200
+Final call: 200
+===
+Изменяемое кэширование с помощью RefCell
+Лучше всего подходит для: Однопоточных изменяемых данных, где вычисленное значение может быть аннулировано или пересчитано несколько раз.
+
+Внутренний шаблон изменяемости Rust позволяет хранить кэш (например, Option<f64>) за неизменяемой ссылкой. RefCell<T> обеспечивает соблюдение правил заимствования во время выполнения, а не во время компиляции.
+```rust
+use std::cell::RefCell;
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+static COMPUTE_COUNT: AtomicUsize = AtomicUsize::new(0);
+
+#[derive(Debug)]
+struct Rectangle {
+    width: f64,
+    height: f64,
+    // Cache stored in RefCell for interior mutability
+    cached_area: RefCell<Option<f64>>,
+}
+
+impl Rectangle {
+    fn new(width: f64, height: f64) -> Self {
+        Self { width, height, cached_area: RefCell::new(None) }
+    }
+
+    fn area(&self) -> f64 {
+        let mut cache = self.cached_area.borrow_mut();
+        match *cache {
+            Some(area) => {
+                println!("Returning cached area: {}", area);
+                area
+            }
+            None => {
+                println!("Computing area...");
+                let area = self.width * self.height;
+                // Only for debugging purposes to track how many times the area is actually computed.
+                COMPUTE_COUNT.fetch_add(1, Ordering::SeqCst);
+                *cache = Some(area);
+                area
+            }
+        }
+    }
+
+    fn set_size(&mut self, width: f64, height: f64) {
+        println!("Updating dimensions and clearing cache...");
+        self.width = width;
+        self.height = height;
+        self.cached_area.replace(None); // Invalidate the cache
+    }
+
+    fn invalidate_cache(&self) {
+        println!("Invalidating cache...");
+        self.cached_area.replace(None);
+    }
+}
+
+fn main() {
+    let mut rect = Rectangle::new(10.0, 20.0);
+
+    println!("First call: {}", rect.area()); // Computes
+    println!("Second call: {}", rect.area()); // Cached
+
+    rect.set_size(15.0, 25.0); // Mutates and invalidates cache
+    println!("After resize: {}", rect.area()); // Recomputes
+
+    rect.invalidate_cache(); // Manually invalidate cache
+    println!("After cache invalidation: {}", rect.area()); // Recomputes
+
+    println!("Times computed: {}", COMPUTE_COUNT.load(Ordering::SeqCst)); // Should be 3
+}
+```
+Expected Output
+
+Computing area...
+First call: 200
+Returning cached area: 200
+Second call: 200
+Updating dimensions and clearing cache...
+Computing area...
+After resize: 375
+Invalidating cache...
+Computing area...
+After cache invalidation: 375
+Times computed: 3
+===
+Потокобезопасное кэширование с использованием мьютекса
+Лучше всего подходит для: совместного использования данных в разных потоках, когда обновлениям или кэшированию требуется эксклюзивный доступ.
+
+В многопоточных сценариях мы можем обернуть наш кэш в мьютекс (Mutex<Option<f64>>). Мьютекс обеспечивает взаимное исключение, то есть только один поток может вычислять или обновлять кэш одновременно.
+```rust
+use std::sync::{Arc, Mutex};
+use std::thread;
+
+struct Rectangle {
+    width: f64,
+    height: f64,
+    cached_area: Mutex<Option<f64>>,
+}
+
+impl Rectangle {
+    fn new(width: f64, height: f64) -> Self {
+        Self { width, height, cached_area: Mutex::new(None) }
+    }
+
+    fn area(&self) -> f64 {
+        let mut cache = self.cached_area.lock().unwrap();
+        match *cache {
+            Some(area) => area,
+            None => {
+                println!("Computing area...");
+                let area = self.width * self.height;
+                *cache = Some(area);
+                area
+            }
+        }
+    }
+}
+
+fn main() {
+    let rect = Arc::new(Rectangle::new(10.0, 20.0));
+    let mut handles = vec![];
+
+    // Spawn 4 threads
+    for _ in 0..4 {
+        let rect = Arc::clone(&rect);
+        handles.push(thread::spawn(move || {
+            println!("Area: {}", rect.area());
+        }));
+    }
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+}
+```
+Expected Output
+
+Computing area...
+Area: 200
+Area: 200
+Area: 200
+Area: 200
+===
+Оптимизированное чтение с помощью RwLock
+Наилучшее решение для: задач с высокой интенсивностью чтения и редкой записью (например, когда множество потоков одновременно читают кэшированное значение).
+
+RwLock позволяет нескольким читателям или одному писателю одновременно выполнять операции чтения. Это может уменьшить конкуренцию, если чтение происходит гораздо чаще, чем запись.
+```rust
+use std::sync::{Arc, RwLock};
+use std::thread;
+use std::time::Duration;
+
+struct Rectangle {
+    width: f64,
+    height: f64,
+    cached_area: RwLock<Option<f64>>,
+}
+
+impl Rectangle {
+    fn new(width: f64, height: f64) -> Self {
+        Self {
+            width,
+            height,
+            cached_area: RwLock::new(None),
+        }
+    }
+
+    fn area(&self, thread_id: usize) -> f64 {
+        // Attempt fast read path
+        {
+            let cache = self.cached_area.read().unwrap();
+            if let Some(area) = *cache {
+                println!("[Thread {thread_id}] Read cached value: {area}");
+                return area;
+            }
+        } // Explicitly drop read lock here
+
+        // Slow write path: block all reads while computing
+        println!("[Thread {thread_id}] Cache miss. Acquiring write lock...");
+        let mut cache = self.cached_area.write().unwrap();
+
+        // Another thread might have written while we waited for write lock
+        if let Some(area) = *cache {
+            println!("[Thread {thread_id}] Another thread cached: {area}");
+            return area;
+        }
+
+        println!("[Thread {thread_id}] Computing area...");
+        thread::sleep(Duration::from_secs(2)); // Simulate slow computation
+        let area = self.width * self.height;
+        *cache = Some(area);
+
+        println!("[Thread {thread_id}] Cached area: {area}");
+        area
+    }
+}
+
+fn main() {
+    let rect = Arc::new(Rectangle::new(10.0, 20.0));
+    let mut handles = vec![];
+
+    for i in 0..4 {
+        let rect = Arc::clone(&rect);
+        handles.push(thread::spawn(move || {
+            println!("[Thread {i}] Started");
+            let result = rect.area(i);
+            println!("[Thread {i}] Computed area: {result}");
+        }));
+    }
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+}
+```
+Expected Output
+
+[Thread 1] Started
+[Thread 1] Cache miss. Acquiring write lock...
+[Thread 1] Computing area...
+[Thread 2] Started
+[Thread 3] Started
+[Thread 0] Started
+[Thread 1] Cached area: 200
+[Thread 1] Computed area: 200
+[Thread 3] Read cached value: 200
+[Thread 3] Computed area: 200
+[Thread 0] Read cached value: 200
+[Thread 0] Computed area: 200
+[Thread 2] Read cached value: 200
+[Thread 2] Computed area: 200
+===
